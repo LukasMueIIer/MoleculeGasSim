@@ -154,10 +154,67 @@ void MoleculeCollision(Molecule * M1, Molecule * M2) { //calculates collision be
 };
 
 //Wall Collisions
-double StiffCollision(Vector vNormal,Vector vWall , Molecule * M1) { //Collision with infinit Mass Object with normal Vector vNormal, vNormal must point into the volume and vWall is one point on the Wall
+void StiffCollision(Vector vNormal,Vector vWall , Molecule * M1) { //Collision with infinit Mass Object with normal Vector vNormal, vNormal must point into the volume and vWall is one point on the Wall !!!!vNormal musst be normed
+	
 	double dBackstep;
+
+	if (1 != SizeVector(&vNormal)) { //Check if vNormal is Size 1 //TODO Maybe disable check for better performance? (Maybe check at compile time)
+		printf("Normal Vector isnt normed!!!");
+		exit(2); //Error vector wassnt normed
+	}
+
 	dBackstep = (vNormal.X*(M1->Position.X - vWall.X) - M1->dRadius + vNormal.Y*(M1->Position.Y - vWall.Y)) / (vNormal.X * M1->Velocity.X + vNormal.Y * M1->Velocity.Y);
-	return dBackstep;
+	
+	StepMolecule(M1, -1 * dBackstep); //"reverse" the time of the colliding molecules to the moment of collision
+
+
+	Vector vOrthogonal;  //Vector orthogonal to connection
+
+	 //Calcualte  vOrthogonal
+	{
+	
+		vOrthogonal.X = vNormal.Y;
+		vOrthogonal.Y = -1 * vNormal.X;
+
+	}  //Calcualte vOrthogonal
+
+	Vector vVelocity1NB; //Current Velocity in New Basis
+
+
+	//Calcualte vVelocity1NB and 2NB
+	{
+		vVelocity1NB = SwapToNewBasis(&M1->Velocity, &vNormal, &vOrthogonal);
+	}
+
+	//Calculate New Velocitys, Y component remains constant
+	
+	vVelocity1NB.X = -1 * vVelocity1NB.X; //Invert Normal Speed
+
+	M1->Velocity = SwapBackBasis(&vVelocity1NB, &vNormal, &vOrthogonal);
+	
+
+	StepMolecule(M1, dBackstep); //"walk" the time we reversed again
+
+}
+
+bool WallCollision(Molecule * M1) {
+	if (M1->Position.X <= 0) { //Collision with left Wall
+		StiffCollision(createVector(1, 0), createVector(0, 0), M1);
+		return true;
+	}
+	else if (M1->Position.X >= BoundingX) { //Collision with right Wall
+		StiffCollision(createVector(-1, 0), createVector(BoundingX, BoundingY), M1);
+		return true;
+	}
+	else if (M1->Position.Y <= 0) { //Collision with lower Wall
+		StiffCollision(createVector(0, 1), createVector(0,0), M1);
+		return true;
+	}
+	else if (M1->Position.Y >= BoundingY) { //Collision with right Wall
+		StiffCollision(createVector(0, -1), createVector(BoundingX, BoundingY), M1);
+		return true;
+	}
+	return false; //Didnt Collide with a Wall
 }
 
 //*WallCollisions
@@ -197,7 +254,7 @@ void HandleCollisions(void) { //Handles collisions for all Molecules
 				}
 				
 			}
-			//TODO Add wall collision
+			collided = WallCollision(Moc + 1); //TODO Not optimal runns this check twice if at least one collision happens and then no collision happens, but seams acceptable
 		} while (collided); //Rerun Loop if they have collided
 	}
 
@@ -233,7 +290,7 @@ int main()
 	iTimestep = 0; //Set timestep to 0
 
 	Molecule S1 = CreateMolcule(1, 0, -1, -1, 1, 2);
-	printf("%f", StiffCollision(createVector(1,0),createVector(0,0),&S1));
+	bool TEst = WallCollision(&S1);
 	
 	return 0;
 }
