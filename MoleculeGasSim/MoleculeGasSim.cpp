@@ -94,7 +94,7 @@ void StepMolecule(Molecule * M1, double dt) { // Step the molecule time
 	M1->Position.Y = M1->Position.Y + dt * M1->Velocity.Y;
 };
 
-void MoleculeCollision(Molecule * M1, Molecule * M2) { //calculates collision betwean lock
+void MoleculeCollision(Molecule * M1, Molecule * M2) { //calculates collision betwean Molecules, with time reveresal this sould be exception free unles molecules have the exact same position and velocity
 
 	double dBackstep; //Time we must go back to propperly calculate collisions
 
@@ -145,8 +145,44 @@ void MoleculeCollision(Molecule * M1, Molecule * M2) { //calculates collision be
 
 };
 
+Molecule Moc[Pointcount]; //hold data of all molecules that are part of the sim, is global for easy of access
 
-Molecule Moc[Pointcount];
+void TimestepAll(double dT) { //Timesteps all molecules by dT
+
+	for (int i = 0; i < Pointcount; ++i) {
+		StepMolecule(Moc + i, dT);
+	}
+
+}
+
+bool CheckCollision(Molecule * M1, Molecule * M2) { //Checks if two molecules have / are colliding
+	Vector vNormal = SubtractVector(&M1->Position, &M2->Position);
+	if (SizeVector(&vNormal) <= M1->dRadius + M2->dRadius) { //they are colliding
+		return true;
+	}
+	return false; //they arent
+}
+
+void HandleCollisions(void) { //Handles collisions for all Molecules
+
+	for (int i = 0; i < Pointcount; ++i) { //Run for all Molecules, with time revesal we musst allways check with all molecules
+		bool collided;
+		do {
+			collided = false; //reset collision
+			for (int j = 0; j < Pointcount; ++j) {
+				if (j != i) { //Prevent selfe collision and division by 0
+					if (CheckCollision(Moc + 1, Moc + j)) {
+						MoleculeCollision(Moc + 1, Moc + j); //They have collided calc their behaviour and rerun loop
+						collided = true; //They have collided, the loop must be rerun
+						break;
+					}
+				}
+				
+			}
+		} while (collided); //Rerun Loop if they have collided
+	}
+
+}
 
 int main()
 {
