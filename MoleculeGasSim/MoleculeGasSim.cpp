@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 
-#define Pointcount 100
+#define Pointcount 3
 #define BoundingX 1 //Größe in X Richtung
 #define BoundingY 1 //GrößE IN y rICHTUNG
 
@@ -285,13 +286,45 @@ void FixedStepLoop(int Steps, double dT) {
 	}
 };
 
+void initializeParticlesBasic(Vector vV, double dT, double dCp, double dMass, double dRadius, double dDensityDifference ) {
+	//Initializes A box with a dDensityDiffrence chance to be located in the Left half with base velocity vV and Temp dependent velocity dT
+	srand(time(NULL)); //Seed randome generator
+
+	double dPx, dPy, dVx, dVy; //double to hold randome position
+
+	double dET = sqrt(2 * dT*dCp);
+
+	for (int i = 0; i < Pointcount; ++i) {
+		
+		dPx = ((double)rand()) / ((double)RAND_MAX);
+		if (dPx <= dDensityDifference / (dDensityDifference + 1)) {
+			dPx = 0.5 * dPx / (dDensityDifference / (dDensityDifference + 1));
+		}else {
+			dPx = 0.5f * (dPx- dDensityDifference / (dDensityDifference + 1)) / (1 / (dDensityDifference + 1)) + 0.5f;
+		}
+		dPx = dPx * BoundingX;
+		dPy = ((double)rand()) / ((double)RAND_MAX) * BoundingY;
+
+		dVx = (2 * ((double)rand()) / ((double)RAND_MAX) - 1) * dET;
+		dVy = sqrt(pow(dET, 2) - pow(dVx, 2));
+		if (((double)rand()) / ((double)RAND_MAX) > 0.5f) {
+			dVy = -1 * dVy;
+		}
+		dVx = dVx + vV.X;
+		dVy = dVy + vV.Y;
+
+		Moc[i] = CreateMolcule(dPx, dPy, dVx, dVy, dMass, dRadius);
+
+	}
+
+}
+
 int main()
 {
-	iTimestep = 0; //Set timestep to 0
+	iTimestep = 0; //Set timestep to 0,
+	initializeParticlesBasic(createVector(0,0),237,0.0001,1,0.001,2);
+	FixedStepLoop(1, 0.001);
 
-	Molecule S1 = CreateMolcule(1, 0, -1, -1, 1, 2);
-	bool TEst = WallCollision(&S1);
-	
 	return 0;
 }
 
