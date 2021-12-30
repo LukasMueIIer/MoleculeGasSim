@@ -85,6 +85,13 @@ Vector SwapBackBasis(const Vector * swapVector, const Vector * Basis1, const Vec
 	return vRes;
 }
 
+Vector createVector(double X, double Y) { //constructor for a vector
+	Vector res;
+	res.X = X;
+	res.Y = Y;
+	return res;
+}
+
 double CalcDT(double d, double p1x, double p1y, double v1x, double v1y, double p2x, double p2y, double v2x, double v2y) { //calculate T from Input
 
 	return (p1x*v1x - p1x * v2x - p2x * v1x + p2x * v2x + p1y * v1y - p1y * v2y - p2y * v1y + p2y * v2y + sqrt(pow(d, 2)* pow(v1x, 2) - 2 * pow(d, 2)*v1x*v2x + pow(d, 2)* pow(v2x, 2) + pow(d, 2)* pow(v1y, 2) - 2 * pow(d, 2)*v1y*v2y + pow(d, 2)* pow(v2y, 2) - pow(p1x, 2)* pow(v1y, 2) + 2 * pow(p1x, 2)*v1y*v2y - pow(p1x, 2)* pow(v2y, 2) + 2 * p1x*p2x*pow(v1y, 2) - 4 * p1x*p2x*v1y*v2y + 2 * p1x*p2x*pow(v2y, 2) + 2 * p1x*p1y*v1x*v1y - 2 * p1x*p1y*v1x*v2y - 2 * p1x*p1y*v2x*v1y + 2 * p1x*p1y*v2x*v2y - 2 * p1x*p2y*v1x*v1y + 2 * p1x*p2y*v1x*v2y + 2 * p1x*p2y*v2x*v1y - 2 * p1x*p2y*v2x*v2y - pow(p2x, 2)* pow(v1y, 2) + 2 * pow(p2x, 2)*v1y*v2y - pow(p2x, 2)* pow(v2y, 2) - 2 * p2x*p1y*v1x*v1y + 2 * p2x*p1y*v1x*v2y + 2 * p2x*p1y*v2x*v1y - 2 * p2x*p1y*v2x*v2y + 2 * p2x*p2y*v1x*v1y - 2 * p2x*p2y*v1x*v2y - 2 * p2x*p2y*v2x*v1y + 2 * p2x*p2y*v2x*v2y - pow(p1y, 2)* pow(v1x, 2) + 2 * pow(p1y, 2)*v1x*v2x - pow(p1y, 2)* pow(v2x, 2) + 2 * p1y*p2y*pow(v1x, 2) - 4 * p1y*p2y*v1x*v2x + 2 * p1y*p2y*pow(v2x, 2) - pow(p2y, 2)* pow(v1x, 2) + 2 * pow(p2y, 2)*v1x*v2x - pow(p2y, 2)* pow(v2x, 2))) / (pow(v1x, 2) - 2 * v1x*v2x + pow(v2x, 2) + pow(v1y, 2) - 2 * v1y*v2y + pow(v2y, 2));
@@ -146,6 +153,15 @@ void MoleculeCollision(Molecule * M1, Molecule * M2) { //calculates collision be
 
 };
 
+//Wall Collisions
+double StiffCollision(Vector vNormal,Vector vWall , Molecule * M1) { //Collision with infinit Mass Object with normal Vector vNormal, vNormal must point into the volume and vWall is one point on the Wall
+	double dBackstep;
+	dBackstep = (vNormal.X*(M1->Position.X - vWall.X) - M1->dRadius + vNormal.Y*(M1->Position.Y - vWall.Y)) / (vNormal.X * M1->Velocity.X + vNormal.Y * M1->Velocity.Y);
+	return dBackstep;
+}
+
+//*WallCollisions
+
 Molecule Moc[Pointcount]; //hold data of all molecules that are part of the sim, is global for easy of access
 int iTimestep; //Integer that holds the current timestep
 
@@ -204,6 +220,7 @@ void WriteToCSV(void) {
 }
 
 void FixedStepLoop(int Steps, double dT) {
+	WriteToCSV(); //Save initial Data
 	for (int i = 0; i < Steps; ++i) {
 		TimestepAll(dT); //Advance Time
 		HandleCollisions(); //Check and correct Collisions
@@ -215,13 +232,9 @@ int main()
 {
 	iTimestep = 0; //Set timestep to 0
 
-	Molecule S1, S2;
-	S1 = CreateMolcule(0, 0, 1, 0, 1, 1);
-	S2 = CreateMolcule(0, -1, 1, 1, 1, 1);
-	MoleculeCollision(&S1, &S2);
-
-	printf("Test");
-
+	Molecule S1 = CreateMolcule(1, 0, -1, -1, 1, 2);
+	printf("%f", StiffCollision(createVector(1,0),createVector(0,0),&S1));
+	
 	return 0;
 }
 
