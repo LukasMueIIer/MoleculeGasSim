@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define Pointcount 3
+#define Pointcount 3000
 #define BoundingX 1 //Größe in X Richtung
 #define BoundingY 1 //GrößE IN y rICHTUNG
 
@@ -247,8 +247,9 @@ void HandleCollisions(void) { //Handles collisions for all Molecules
 			collided = false; //reset collision
 			for (int j = 0; j < Pointcount; ++j) {
 				if (j != i) { //Prevent selfe collision and division by 0
-					if (CheckCollision(Moc + 1, Moc + j)) {
-						MoleculeCollision(Moc + 1, Moc + j); //They have collided calc their behaviour and rerun loop
+					if (CheckCollision(Moc + i, Moc + j)) {
+						MoleculeCollision(Moc + i, Moc + j); //They have collided calc their behaviour and rerun loop
+						printf("Collisionnnn\n");
 						collided = true; //They have collided, the loop must be rerun
 						break;
 					}
@@ -280,6 +281,7 @@ void WriteToCSV(void) {
 void FixedStepLoop(int Steps, double dT) {
 	WriteToCSV(); //Save initial Data
 	for (int i = 0; i < Steps; ++i) {
+		printf("%d\n", i);
 		TimestepAll(dT); //Advance Time
 		HandleCollisions(); //Check and correct Collisions
 		WriteToCSV(); //Save Data
@@ -323,7 +325,7 @@ int main()
 {
 	iTimestep = 0; //Set timestep to 0,
 	initializeParticlesBasic(createVector(0,0),237,0.0001,1,0.001,2);
-	FixedStepLoop(1, 0.001);
+	FixedStepLoop(1000, 0.003);
 
 	return 0;
 }
