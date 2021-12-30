@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 #define Pointcount 100
 #define BoundingX 1 //Größe in X Richtung
@@ -146,6 +147,7 @@ void MoleculeCollision(Molecule * M1, Molecule * M2) { //calculates collision be
 };
 
 Molecule Moc[Pointcount]; //hold data of all molecules that are part of the sim, is global for easy of access
+int iTimestep; //Integer that holds the current timestep
 
 void TimestepAll(double dT) { //Timesteps all molecules by dT
 
@@ -179,18 +181,48 @@ void HandleCollisions(void) { //Handles collisions for all Molecules
 				}
 				
 			}
+			//TODO Add wall collision
 		} while (collided); //Rerun Loop if they have collided
 	}
 
 }
 
+void WriteToCSV(void) {
+	FILE * fp;
+	char filename[50]; //String to hold the filename
+	sprintf_s(filename, 50, "stepdata%d.csv", iTimestep); //Build Name of new file
+	if (NULL != fopen_s(&fp, filename, "w")) {//open the file
+		printf("FEHLER !!");
+		exit(1); //Exit Code 1, couldnt open file
+	}
+	fprintf(fp, "X ; Y ; Vx ; Vy ;\n"); //File Header
+	for (int i = 0; i < Pointcount; ++i) {
+		fprintf(fp, "%f ; %f ; %f ; %f ;\n", Moc[i].Position.X, Moc[i].Position.Y, Moc[i].Velocity.X, Moc[i].Velocity.Y);
+	}
+	fclose(fp); //close File
+	++iTimestep;
+}
+
+void FixedStepLoop(int Steps, double dT) {
+	for (int i = 0; i < Steps; ++i) {
+		TimestepAll(dT); //Advance Time
+		HandleCollisions(); //Check and correct Collisions
+		WriteToCSV(); //Save Data
+	}
+};
+
 int main()
 {
+	iTimestep = 0; //Set timestep to 0
+
 	Molecule S1, S2;
 	S1 = CreateMolcule(0, 0, 1, 0, 1, 1);
 	S2 = CreateMolcule(0, -1, 1, 1, 1, 1);
 	MoleculeCollision(&S1, &S2);
+
 	printf("Test");
+
+	return 0;
 }
 
 // Programm ausführen: STRG+F5 oder "Debuggen" > Menü "Ohne Debuggen starten"
